@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <script>
+    (function () {
+      var base = document.createElement('base');
+      // إذا كان الرابط يحتوي على github.io، نستخدم مسار المشروع، غير ذلك نستخدم الجذر (لـ Cloudflare)
+      if (window.location.hostname.includes("github.io")) {
+        base.href = "/quran/";
+      } else {
+        base.href = "/";
+      }
+      document.head.appendChild(base);
+    }());
+  </script>
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="تطبيق القرآن الكريم - استماع وتنزيل بدون انترنت">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="القرآن">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png" />
+
+  <title>القرآن الكريم</title>
+  <link rel="manifest" href="manifest.json">
+
+  <script>
+    // The value below is injected by flutter build, do not touch.
+    const serviceWorkerVersion = "583608180";
+  </script>
+</head>
+
+<body>
+  <script>
+    // منطق التثبيت
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      window.deferredPrompt = e;
+      if (window.onBeforeInstallPrompt) {
+        window.onBeforeInstallPrompt();
+      }
+    });
+
+    window.addEventListener('appinstalled', (evt) => {
+      window.deferredPrompt = null;
+      if (window.onAppInstalled) {
+        window.onAppInstalled();
+      }
+    });
+
+    function presentPwaInstallPrompt() {
+      if (window.deferredPrompt) {
+        window.deferredPrompt.prompt();
+        window.deferredPrompt.userChoice.then((choiceResult) => {
+          window.deferredPrompt = null;
+        });
+      }
+    }
+
+    // منطق التحديث
+    let newServiceWorker;
+
+    function reloadAppForUpdate() {
+      if (newServiceWorker) {
+        newServiceWorker.postMessage({ type: 'SKIP_WAITING' });
+      } else {
+        window.location.reload();
+      }
+    }
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        // تسجيل السيرفس وركر لضمان العمل اوفلاين
+        navigator.serviceWorker.register('flutter_service_worker.js?v=' + serviceWorkerVersion).then(function (reg) {
+          console.log('Service Worker Registered');
+
+          reg.addEventListener('updatefound', () => {
+            newServiceWorker = reg.installing;
+            newServiceWorker.addEventListener('statechange', () => {
+              if (newServiceWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                if (window.onUpdateAvailable) {
+                  window.onUpdateAvailable();
+                }
+              }
+            });
+          });
+
+          if (reg.waiting) {
+            newServiceWorker = reg.waiting;
+            if (window.onUpdateAvailable) {
+              window.onUpdateAvailable();
+            }
+          }
+        });
+
+        // رصد التغييرات لإعادة التحميل
+        let refreshing;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (refreshing) return;
+          window.location.reload();
+          refreshing = true;
+        });
+      });
+    }
+  </script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+
+</html>
